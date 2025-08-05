@@ -1,7 +1,7 @@
 {
   "name": "@ryogrid/gtags-mcp",
-  "version": "2.0.0",
-  "description": "An MCP (Model-Code-Provider) that wraps GNU GLOBAL(gtags) and communicates via stdio for AI coding agents.",
+  "version": "0.0.2",
+  "description": "An MCP (Model-Code-Provider) that wraps GNU GLOBAL(gtags) and communicates via TCP for AI coding agents.",
   "main": "lib/server.js",
   "bin": {
     "gtags-mcp": "bin/gtags-mcp"
@@ -18,9 +18,9 @@
     "mcp",
     "code-analysis",
     "llm",
-    "stdio"
+    "tcp"
   ],
-  "author": "Ryo Kanbayshi",
+  "author": "Ryo Kanbayashi",
   "license": "MIT",
   "dependencies": {},
   "repository": {
