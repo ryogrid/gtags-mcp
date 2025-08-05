@@ -1,6 +1,6 @@
 {
   "name": "@ryogrid/gtags-mcp",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "An MCP (Model-Code-Provider) that wraps GNU GLOBAL(gtags) and communicates via TCP for AI coding agents.",
   "main": "lib/server.js",
   "bin": {
