@@ -1,107 +1,205 @@
-# MCP Stdio Service for AI Agents (@ryogrid/gtags-mcp)
+# MCP Server for GNU GLOBAL (@ryogrid/gtags-mcp)
 
 ## Overview
 
-`@ryogrid/gtags-mcp` is a command-line service that provides a bridge between an AI coding agent and a local codebase. It uses GNU GLOBAL (gtags) for high-speed code analysis and communicates with a parent AI agent process via `stdio` (standard input/output) using a simple JSON-based protocol.
-
-This design eliminates the need for network ports, simplifying integration and preventing conflicts. The AI agent spawns and manages this process directly.
-
-## Core Problem and Solution
-
-AI agents based on Large Language Models (LLMs) often face challenges when generating code:
-- **Lack of Context**: They can only see the snippets of code provided in their prompt.
-- **Hallucination**: They may "guess" and generate code that calls non-existent functions or uses incorrect variable names.
-- **Inconsistency**: They might produce code that doesn't align with the project's existing coding conventions and style.
-
-This service acts as the AI's "eyes" on the codebase. By spawning this process, the agent can send requests to its `stdin` to look up function definitions, find references, and explore the code, just as a human developer uses an IDE.
+`@ryogrid/gtags-mcp` is an MCP (Model Context Protocol) server that provides AI coding agents like Claude Code with powerful codebase analysis capabilities using GNU GLOBAL (gtags). It allows AI agents to search for symbol definitions, references, and perform pattern matching across large codebases with high performance.
 
 ## Features
 
-- **Stdio Communication**: No network ports, no hassle. Communication is handled via `stdin` and `stdout`.
-- **One-Command Execution**: Runs directly via `npx`, requiring no installation.
-- **High-Speed Code Analysis**: Leverages `gtags` for instantaneous code navigation.
-- **Automatic Index Updates**: Periodically runs an incremental `gtags` update in the background.
+- **MCP Protocol Compliance**: Fully compatible with Model Context Protocol for seamless integration with AI coding agents
+- **Symbol Definition Lookup**: Find exact definitions of functions, variables, classes, and other symbols
+- **Reference Finding**: Locate all usages of a symbol across the entire codebase  
+- **Symbol Completion**: List all symbols that start with a given prefix
+- **Pattern Search**: Search for patterns in source code using grep-like functionality
+- **Automatic Index Updates**: Periodically updates the gtags database to keep results current
+- **High Performance**: Leverages GNU GLOBAL's optimized indexing for fast searches even in large codebases
 
 ## Prerequisites
 
-- **Node.js**: v18.0.0 or higher is recommended.
-- **GNU GLOBAL**: The `gtags` command must be installed on the system and accessible in the `PATH`.
+- **Node.js**: v18.0.0 or higher
+- **GNU GLOBAL**: Must be installed and accessible in PATH
+  - On Ubuntu/Debian: `sudo apt install global`
+  - On macOS: `brew install global`
+  - On other systems: See [GNU GLOBAL installation guide](https://www.gnu.org/software/global/)
 
-## How to Use
+## Installation
 
-An AI agent orchestrator should spawn this process using `npx`. You can also run it directly in your terminal for testing purposes.
-
+### Global Installation
 ```bash
-npx @ryogrid/gtags-mcp --dir <path/to/project> [options]
+npm install -g @ryogrid/gtags-mcp
 ```
 
-**Arguments:**
-- `--dir <path>` (Required): The path to the root directory of the codebase you want to analyze.
-- `--interval <seconds>` (Optional): The interval in seconds for automatic index updates. Defaults to `15` (15 seconds).
-
-**Example:**
+### Using npx (Recommended)
 ```bash
-# Start the service for 'my-app' with a 30-second update interval
-npx @ryogrid/gtags-mcp --dir /home/user/projects/my-app --interval=30
+npx @ryogrid/gtags-mcp --dir /path/to/your/project
 ```
-When run, the service will log status messages to `stderr` and wait for JSON requests on `stdin`.
 
-## Integrating with an AI Agent
+## Usage
 
-For an AI agent to use this service, its orchestrator (e.g., a CLI like `claude code`) must be configured to spawn the `gtags-mcp` process when needed. This is typically done via a "registration" command.
-
-### Example One-Liner Registration
-
-Let's assume the agent's CLI is `claude` and it has a command `mcp add` to register a new code provider. The command would look like this:
-
+### Command Line Options
 ```bash
-claude mcp add gtags-mcp -- npx @ryogrid/gtags-mcp --dir "/path/to/my-project"
+gtags-mcp --dir <project-directory> [--interval <seconds>]
+
+Options:
+  --dir <path>        Path to the project directory (required)
+  --interval <seconds> Update interval for gtags database in seconds (default: 15)
 ```
 
-Let's break down this command:
+### Basic Usage
+```bash
+# Start MCP server for a specific project
+npx @ryogrid/gtags-mcp --dir /home/user/my-project
 
-- `claude mcp add`: The main command to register a new provider.
-- `gtags-mcp`: A unique name you give to this specific configuration. The agent will use this name to refer to the project.
-- `--`: A standard separator indicating that all following arguments form the command to be executed.
-- `npx @ryogrid/gtags-mcp --dir "/path/to/my-project"`: The full, exact command that the `claude` agent will execute to start the `stdio` service for your project.
-
-After running this registration command, when you ask the agent a question about `gtags-mcp`, it knows to spawn the specified command and communicate with it over `stdio`.
-
-## Communication Protocol
-
-The service uses a line-delimited JSON protocol. The agent writes a single-line JSON request to the process's `stdin`, and the service replies with a single-line JSON response on `stdout`.
-
-### Request Format
-
-A request is a JSON object with three required fields:
-
-- `id` (string): A unique identifier for the request, which will be mirrored in the response.
-- `command` (string): The name of the command to execute (e.g., `get_definition`).
-- `params` (object): A key-value object of parameters for the command.
-
-**Example Request sent to `stdin`:**
-```json
-{"id":"req-001","command":"get_definition","params":{"symbol":"myFunction"}}
+# With custom update interval
+npx @ryogrid/gtags-mcp --dir /home/user/my-project --interval 30
 ```
 
-### Response Format
+## Integration with AI Coding Agents
 
-A response is a JSON object with the following fields:
+### Claude Code Integration
 
-- `id` (string): The mirrored ID from the original request.
-- `status` (string): Either `"success"` or `"error"`.
-- `payload` (any): The result of the operation if `status` is `"success"`.
-- `error` (object): An error object if `status` is `"error"`.
+1. **Option 1: Direct Configuration**
+   
+   Add to your Claude Code MCP configuration file (usually located at `~/.config/claude/mcp.json`):
 
-**Example Success Response written to `stdout`:**
-```json
-{"id":"req-001","status":"success","payload":[{"symbol":"myFunction","line":42,"file":"src/utils.js","code":"function myFunction() {"}]}
+   ```json
+   {
+     "servers": {
+       "gtags-mcp": {
+         "type": "stdio",
+         "command": "npx",
+         "args": [
+           "@ryogrid/gtags-mcp",
+           "--dir",
+           "/path/to/your/project"
+         ],
+         "env": {}
+       }
+     }
+   }
+   ```
+
+2. **Option 2: Using Configuration Template**
+   
+   Copy the provided `claude-config.json` file and modify the `--dir` path:
+   
+   ```bash
+   cp node_modules/@ryogrid/gtags-mcp/claude-config.json ~/.config/claude/mcp.json
+   # Edit the file to set your project path
+   ```
+
+### Other MCP-Compatible Agents
+
+Use the provided `mcp.config.json` as a template for other MCP-compatible AI agents.
+
+## Available Tools
+
+The MCP server provides the following tools to AI agents:
+
+### 1. get_definition
+Retrieves the exact definition of a symbol (function, variable, class, etc.)
+
+**Input**: `{ "symbol": "function_name" }`
+**Output**: File location, line number, and source code of the definition
+
+### 2. get_references  
+Finds all locations where a symbol is used/referenced
+
+**Input**: `{ "symbol": "function_name" }`  
+**Output**: List of all files and line numbers where the symbol is referenced
+
+### 3. list_symbols_with_prefix
+Lists all symbols that start with a given prefix (useful for auto-completion)
+
+**Input**: `{ "prefix": "get_" }`
+**Output**: List of all symbols starting with the prefix
+
+### 4. search_pattern
+Searches for a pattern in the source code using grep-like functionality
+
+**Input**: `{ "pattern": "TODO|FIXME" }`
+**Output**: All matches with file locations and context
+
+## How It Works
+
+1. **Initialization**: When started, the server checks for an existing GTAGS database in the project directory. If none exists, it creates one using `gtags`.
+
+2. **Query Processing**: The server receives MCP-formatted requests from AI agents and translates them into appropriate `global` commands.
+
+3. **Automatic Updates**: The server periodically runs `global -u` to update the symbol database as code changes.
+
+4. **Response Formatting**: Results are formatted according to MCP specifications and returned to the requesting AI agent.
+
+## Built-in Analysis Prompts
+
+The MCP server includes intelligent prompts that guide AI agents on how to effectively use the codebase analysis tools:
+
+### Available Prompts
+
+1. **analyze-codebase**: General codebase analysis workflow and best practices
+2. **find-function**: Systematic approach to understanding a specific function
+3. **code-navigation**: Strategies for navigating and exploring codebases
+4. **refactoring-analysis**: Pre-refactoring impact analysis checklist
+
+### How Prompts Work
+
+When an AI agent (like Claude Code) connects to this MCP server, it automatically receives guidance on:
+- When to use each tool
+- How to analyze code systematically  
+- Best practices for codebase exploration
+- Step-by-step workflows for common tasks
+
+The prompts ensure that AI agents use the tools effectively and follow software engineering best practices.
+
+
+## Supported Languages
+
+GNU GLOBAL supports many programming languages including:
+- C/C++
+- Java
+- PHP
+- Python
+- JavaScript
+- Go
+- Rust
+- And many more
+
+The exact language support depends on your GNU GLOBAL installation and configuration.
+
+## Troubleshooting
+
+### Common Issues
+
+1. **"gtags command not found"**
+   - Ensure GNU GLOBAL is installed and in your PATH
+   - Verify installation: `which gtags`
+
+2. **"No symbols found"**
+   - Make sure you're in a directory with source code
+   - Check that GTAGS database was created successfully
+   - Some file types might not be indexed by default
+
+3. **Permission errors**
+   - Ensure the server has read/write access to the project directory
+   - GTAGS database files need to be writable for updates
+
+### Debug Mode
+Set environment variable for verbose logging:
+```bash
+DEBUG=1 npx @ryogrid/gtags-mcp --dir /path/to/project
 ```
 
-**Example Error Response written to `stdout`:**
-```json
-{"id":"req-002","status":"error","error":{"message":"Unknown command: get_foobar"}}
-```
+## Contributing
 
-The agent's system prompt should be configured with knowledge of the available commands. See `tool_definition.xml` for a template.
-```
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## License
+
+MIT License - see LICENSE file for details.
+
+## Links
+
+- [GitHub Repository](https://github.com/ryogrid/gtags-mcp)
+- [NPM Package](https://www.npmjs.com/package/@ryogrid/gtags-mcp)
+- [GNU GLOBAL Documentation](https://www.gnu.org/software/global/)
+- [Model Context Protocol Specification](https://modelcontextprotocol.io/)

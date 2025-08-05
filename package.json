@@ -1,24 +1,28 @@
 {
   "name": "@ryogrid/gtags-mcp",
-  "version": "0.0.3",
-  "description": "An MCP (Model-Code-Provider) that wraps GNU GLOBAL(gtags) and communicates via TCP for AI coding agents.",
+  "version": "0.0.4",
+  "description": "MCP server that wraps GNU GLOBAL(gtags) for AI coding agents to analyze codebases",
   "main": "lib/server.js",
   "bin": {
     "gtags-mcp": "bin/gtags-mcp"
   },
   "scripts": {
     "start": "node lib/server.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prepare": "chmod +x bin/gtags-mcp"
   },
   "keywords": [
+    "mcp",
+    "model-context-protocol",
     "claude",
     "ai-agent",
     "gtags",
     "gnu-global",
-    "mcp",
     "code-analysis",
     "llm",
-    "tcp"
+    "codebase-analysis",
+    "symbol-lookup",
+    "code-navigation"
   ],
   "author": "Ryo Kanbayashi",
   "license": "MIT",
@@ -32,5 +36,12 @@
   },
   "engines": {
     "node": ">=18.0.0"
-  }
+  },
+  "files": [
+    "lib/",
+    "bin/",
+    "README.md",
+    "mcp.config.json",
+    "claude-config.json"
+  ]
 }

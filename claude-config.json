@@ -1,0 +1,15 @@
+{
+  "servers": {
+    "gtags-mcp": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "@ryogrid/gtags-mcp",
+        "--dir",
+        "/path/to/your/project"
+      ],
+      "env": {}
+    }
+  },
+  "inputs": []
+}

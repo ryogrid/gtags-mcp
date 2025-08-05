@@ -1,7 +1,35 @@
 #!/usr/bin/env node
 
-/**
- * CLI entry point for the gtags-mcp server.
- * This script validates arguments and runs the main server logic.
- */
-require('../lib/server.js');
+const GtagsMCPServer = require('../lib/server.js');
+
+// Parse command line arguments
+const args = process.argv.slice(2);
+let projectDir = null;
+let updateInterval = 15;
+
+for (let i = 0; i < args.length; i++) {
+    if (args[i] === '--dir' && i + 1 < args.length) {
+        projectDir = args[i + 1];
+        i++; // Skip next argument
+    } else if (args[i] === '--interval' && i + 1 < args.length) {
+        updateInterval = parseInt(args[i + 1]);
+        i++; // Skip next argument
+    }
+}
+
+if (!projectDir) {
+    console.error('Error: --dir <path> is required');
+    console.error('Usage: gtags-mcp --dir <project-directory> [--interval <seconds>]');
+    process.exit(1);
+}
+
+// Check if directory exists
+const fs = require('fs');
+if (!fs.existsSync(projectDir)) {
+    console.error(`Error: Directory does not exist: ${projectDir}`);
+    process.exit(1);
+}
+
+// Start the MCP server
+const server = new GtagsMCPServer(projectDir, updateInterval);
+server.start();
