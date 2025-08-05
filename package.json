@@ -1,0 +1,36 @@
+{
+  "name": "@ryogrid/gtags-mcp",
+  "version": "2.0.0",
+  "description": "An MCP (Model-Code-Provider) that wraps GNU GLOBAL(gtags) and communicates via stdio for AI coding agents.",
+  "main": "lib/server.js",
+  "bin": {
+    "gtags-mcp": "bin/gtags-mcp"
+  },
+  "scripts": {
+    "start": "node lib/server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "claude",
+    "ai-agent",
+    "gtags",
+    "gnu-global",
+    "mcp",
+    "code-analysis",
+    "llm",
+    "stdio"
+  ],
+  "author": "ryogrid",
+  "license": "MIT",
+  "dependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ryogrid/gtags-mcp.git"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

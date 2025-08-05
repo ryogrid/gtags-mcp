@@ -1,0 +1,7 @@
+#!/usr/bin/env node
+
+/**
+ * CLI entry point for the gtags-mcp server.
+ * This script validates arguments and runs the main server logic.
+ */
+require('../lib/server.js');

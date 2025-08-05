@@ -1,0 +1,47 @@
+<!--
+  Tool definition for the MCP (Model-Code-Provider) stdio Service.
+  Including this in an AI agent's system prompt grants it the ability
+  to autonomously inspect a local codebase by calling these commands.
+  The agent orchestrator is responsible for executing this service
+  and handling the stdio JSON communication protocol.
+-->
+<tools>
+  <tool>
+    <name>get_definition</name>
+    <description>Retrieves the exact definition (file, line number, and source code) of a symbol (e.g., function, class, variable). This is a critical first step before modifying or understanding any piece of code.</description>
+    <parameters>
+      <parameter>
+        <name>symbol</name>
+        <type>string</type>
+        <description>The exact name of the symbol to look up.</description>
+        <required>true</required>
+      </parameter>
+    </parameters>
+  </tool>
+
+  <tool>
+    <name>get_references</name>
+    <description>Finds all locations where a symbol is used or called. This is essential for understanding the impact of a change (the "blast radius") and ensuring safe refactoring.</description>
+    <parameters>
+      <parameter>
+        <name>symbol</name>
+        <type>string</type>
+        <description>The name of the symbol to find references for.</description>
+        <required>true</required>
+      </parameter>
+    </parameters>
+  </tool>
+  
+  <tool>
+    <name>list_symbols_with_prefix</name>
+    <description>Lists all symbols that start with a given prefix. This helps discover related functions, constants, or variables, for example, finding all helper functions starting with 'util_'.</description>
+    <parameters>
+      <parameter>
+        <name>prefix</name>
+        <type>string</type>
+        <description>The prefix of the symbols to search for.</description>
+        <required>true</required>
+      </parameter>
+    </parameters>
+  </tool>
+</tools>
