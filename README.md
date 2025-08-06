@@ -58,7 +58,15 @@ npx @ryogrid/gtags-mcp --dir /home/user/my-project --interval 30
 
 ### Claude Code Integration
 
-1. **Option 1: Direct Configuration**
+1. **Option 1: On-Liner Command Line**
+
+    You can add the MCP server directly from the command line using Claude's CLI:
+
+    ```bash
+    claude mcp add gtags-mcp -- npx @ryogrid/gtags-mcp --dir "/path/to/my-project"
+    ```
+
+2. **Option 2: Direct Configuration**
    
    Add to your Claude Code MCP configuration file (usually located at `~/.config/claude/mcp.json`):
 
@@ -79,7 +87,7 @@ npx @ryogrid/gtags-mcp --dir /home/user/my-project --interval 30
    }
    ```
 
-2. **Option 2: Using Configuration Template**
+3. **Option 3: Using Configuration Template**
    
    Copy the provided `claude-config.json` file and modify the `--dir` path:
    
