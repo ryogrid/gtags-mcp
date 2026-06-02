@@ -1,5 +1,5 @@
 {
-  "name": "@ryogrid/gtags-mcp",
+  "name": "gtags-mcp",
   "version": "0.1.0",
   "description": "MCP server that wraps GNU GLOBAL(gtags) for AI coding agents to analyze codebases",
   "main": "lib/server.js",
