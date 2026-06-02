@@ -11,7 +11,7 @@
 - **Reference Finding**: Locate all usages of a symbol across the entire codebase  
 - **Symbol Completion**: List all symbols that start with a given prefix
 - **Pattern Search**: Search for patterns in source code using grep-like functionality
-- **Automatic Index Updates**: Periodically updates the gtags database to keep results current
+- **Manual or Hook-Based Index Refresh**: Refresh the gtags database with `global -u` after code changes, or automate it with editor/agent hooks
 - **High Performance**: Leverages GNU GLOBAL's optimized indexing for fast searches even in large codebases
 
 ## Prerequisites
@@ -38,21 +38,36 @@ npx @ryogrid/gtags-mcp --dir /path/to/your/project
 
 ### Command Line Options
 ```bash
-gtags-mcp --dir <project-directory> [--interval <seconds>]
+gtags-mcp --dir <project-directory>
 
 Options:
   --dir <path>        Path to the project directory (required)
-  --interval <seconds> Update interval for gtags database in seconds (default: 15)
 ```
 
 ### Basic Usage
 ```bash
 # Start MCP server for a specific project
 npx @ryogrid/gtags-mcp --dir /home/user/my-project
-
-# With custom update interval
-npx @ryogrid/gtags-mcp --dir /home/user/my-project --interval 30
 ```
+
+### Keeping the Index Current
+
+`gtags-mcp` creates the initial GNU GLOBAL database when the server starts, but it does not watch the project for later file changes.
+
+If you edit C source or header files after the server has started, refresh the index from the project root before relying on symbol lookups:
+
+```bash
+global -u
+```
+
+If the database gets out of sync, or after larger file moves/renames, rebuild it from scratch:
+
+```bash
+rm -f GTAGS GRTAGS GPATH
+gtags
+```
+
+If files are changed outside Claude Code, you still need to run one of the commands above from your shell or editor workflow.
 
 ## Integration with AI Coding Agents
 
@@ -95,6 +110,86 @@ npx @ryogrid/gtags-mcp --dir /home/user/my-project --interval 30
    cp node_modules/@ryogrid/gtags-mcp/claude-config.json ~/.config/claude/mcp.json
    # Edit the file to set your project path
    ```
+
+4. **Option 4: Refresh GNU GLOBAL automatically after Claude edits C files**
+
+   Add a project hook in `.claude/settings.json` so Claude Code runs a refresh after each `Write` or `Edit` tool call:
+
+   ```json
+   {
+     "hooks": {
+       "PostToolUse": [
+         {
+           "matcher": "Write|Edit",
+           "hooks": [
+             {
+               "type": "command",
+               "command": "node",
+               "args": [
+                 "${CLAUDE_PROJECT_DIR}/.claude/hooks/update-gtags.js"
+               ],
+               "async": true,
+               "timeout": 120
+             }
+           ]
+         }
+       ]
+     }
+   }
+   ```
+
+   Save the following script as `.claude/hooks/update-gtags.js`:
+
+   ```js
+   #!/usr/bin/env node
+
+   const { execFile } = require('child_process');
+
+   function readStdin() {
+     return new Promise((resolve, reject) => {
+       let data = '';
+       process.stdin.setEncoding('utf8');
+       process.stdin.on('data', (chunk) => {
+         data += chunk;
+       });
+       process.stdin.on('end', () => resolve(data));
+       process.stdin.on('error', reject);
+     });
+   }
+
+   async function main() {
+     const payload = JSON.parse(await readStdin());
+     const filePath = payload.tool_input?.file_path || '';
+
+     if (!/\.(c|h)$/.test(filePath)) {
+       return;
+     }
+
+     await new Promise((resolve, reject) => {
+       execFile('global', ['-u'], { cwd: process.env.CLAUDE_PROJECT_DIR }, (error) => {
+         if (error) {
+           reject(error);
+           return;
+         }
+         resolve();
+       });
+     });
+   }
+
+   main().catch((error) => {
+     console.error(error.message);
+     process.exit(1);
+   });
+   ```
+
+   Then make the script executable:
+
+   ```bash
+   chmod +x .claude/hooks/update-gtags.js
+   ```
+
+   This example refreshes the index only for `.c` and `.h` files edited by Claude Code. If you also change files outside Claude Code, run `global -u` manually or trigger it from your editor/build system.
+
 ### Claude.md
 Add this prompt to top of CLAUDE.md ....
 ```text
@@ -102,7 +197,7 @@ You are a professional coding agent concerned with one particular codebase. You 
 
 When analyzing the code in order to answer a user question or task, you should try to understand the code by reading only what is absolutely necessary. Some tasks may require you to understand the architecture of large parts of the codebase, while for others, it may be enough to analyze a small set of symbol definitions.
 
-Generally, you should avoid requesting the content of entire files, instead relying on an intelligent, step-by-step acquisition of information using your symbol navigation tools. **The codebase is automatically indexed for you.**
+Generally, you should avoid requesting the content of entire files, instead relying on an intelligent, step-by-step acquisition of information using your symbol navigation tools. A GNU GLOBAL index is expected to be available for this codebase. If source files changed after the last refresh, run `global -u` from the project root before relying on symbol results.
 
 **IMPORTANT: Always use your `gtags-mcp` tools to minimize code reading and operate on facts:**
 
@@ -112,7 +207,7 @@ Generally, you should avoid requesting the content of entire files, instead rely
 
 You can achieve intelligent code analysis by following this workflow:
 
-1.  Recognizing that the codebase is **pre-indexed** for fast, efficient searching. You do not need to request indexing.
+1.  Recognizing that a GNU GLOBAL index is available for fast, efficient searching. You do not need to ask gtags-mcp to index the project, but you should refresh the database with `global -u` after code edits when needed.
 2.  Using `get_definition` to pinpoint the implementation of key symbols mentioned in the user's request.
 3.  Using `get_references` to understand how and where those symbols are used throughout the codebase.
 4.  Using `list_symbols_with_prefix` to explore the codebase and discover related helper functions or constants.
@@ -170,9 +265,7 @@ Searches for a pattern in the source code using grep-like functionality
 
 2. **Query Processing**: The server receives MCP-formatted requests from AI agents and translates them into appropriate `global` commands.
 
-3. **Automatic Updates**: The server periodically runs `global -u` to update the symbol database as code changes.
-
-4. **Response Formatting**: Results are formatted according to MCP specifications and returned to the requesting AI agent.
+3. **Response Formatting**: Results are formatted according to MCP specifications and returned to the requesting AI agent.
 
 ## Built-in Analysis Prompts
 

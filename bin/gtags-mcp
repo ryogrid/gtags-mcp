@@ -5,21 +5,17 @@ const GtagsMCPServer = require('../lib/server.js');
 // Parse command line arguments
 const args = process.argv.slice(2);
 let projectDir = null;
-let updateInterval = 15;
 
 for (let i = 0; i < args.length; i++) {
     if (args[i] === '--dir' && i + 1 < args.length) {
         projectDir = args[i + 1];
-        i++; // Skip next argument
-    } else if (args[i] === '--interval' && i + 1 < args.length) {
-        updateInterval = parseInt(args[i + 1]);
         i++; // Skip next argument
     }
 }
 
 if (!projectDir) {
     console.error('Error: --dir <path> is required');
-    console.error('Usage: gtags-mcp --dir <project-directory> [--interval <seconds>]');
+    console.error('Usage: gtags-mcp --dir <project-directory>');
     process.exit(1);
 }
 
@@ -31,5 +27,5 @@ if (!fs.existsSync(projectDir)) {
 }
 
 // Start the MCP server
-const server = new GtagsMCPServer(projectDir, updateInterval);
+const server = new GtagsMCPServer(projectDir);
 server.start();
